@@ -1,8 +1,9 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { deployConnected } = require("./helpers");
 
 describe("YeldenVault — Gas Consumption", function () {
-  let vault, mockUSDC;
+  let vault, distributor, mockUSDC;
   let owner, user1, user2;
 
   const DEPOSIT_AMOUNT = ethers.parseUnits("1000", 6);
@@ -11,17 +12,9 @@ describe("YeldenVault — Gas Consumption", function () {
   beforeEach(async function () {
     [owner, user1, user2] = await ethers.getSigners();
 
-    const MockERC20 = await ethers.getContractFactory("MockERC20");
-    mockUSDC = await MockERC20.deploy("Mock USDC", "USDC", 6);
-    await mockUSDC.waitForDeployment();
-
-    const YeldenVault = await ethers.getContractFactory("YeldenVault");
-    vault = await YeldenVault.deploy(
-      await mockUSDC.getAddress(),
-      "Yelden USD",
-      "yUSD"
-    );
-    await vault.waitForDeployment();
+    const deployment = await deployConnected();
+    vault = deployment.vault;
+    mockUSDC = deployment.usdc;
 
     await mockUSDC.mint(user1.address, ethers.parseUnits("100000", 6));
     await mockUSDC.mint(user2.address, ethers.parseUnits("100000", 6));
@@ -96,7 +89,7 @@ describe("YeldenVault — Gas Consumption", function () {
       const receipt = await tx.wait();
       
       console.log(`⛽ Harvest: ${receipt.gasUsed} gas`);
-      expect(receipt.gasUsed).to.be.lessThan(100000);
+      expect(receipt.gasUsed).to.be.lessThan(200000); // Higher due to distributor call
     });
   });
 
@@ -209,16 +202,17 @@ describe("YeldenVault — Gas Consumption", function () {
       receipt = await tx.wait();
       console.log(`   ✅ Withdraw: ${receipt.gasUsed} gas`);
       
-      const total = await Promise.all([
-        mockUSDC.connect(user1).approve(await vault.getAddress(), DEPOSIT_AMOUNT),
-        vault.connect(user1).deposit(DEPOSIT_AMOUNT, user1.address),
-        vault.connect(owner).harvest(GROSS_YIELD),
-        vault.connect(user1).withdraw(DEPOSIT_AMOUNT / 2n, user1.address, user1.address)
-      ]).then(async (txs) => {
-        const receipts = await Promise.all(txs.map(tx => tx.wait()));
-        const sum = receipts.reduce((acc, r) => acc + Number(r.gasUsed), 0);
-        console.log(`\n   Total gas: ${sum} gas (${(sum * 1e-9).toFixed(2)} gwei @ 20 gwei = $${(sum * 20 * 1e-9 * 3000).toFixed(2)} USD estimado)`);
-      });
+      // Sequential — each tx must confirm before next (approve before deposit)
+      const tx_a = await mockUSDC.connect(user1).approve(await vault.getAddress(), DEPOSIT_AMOUNT);
+      const r_a = await tx_a.wait();
+      const tx_d = await vault.connect(user1).deposit(DEPOSIT_AMOUNT, user1.address);
+      const r_d = await tx_d.wait();
+      const tx_h = await vault.connect(owner).harvest(GROSS_YIELD);
+      const r_h = await tx_h.wait();
+      const tx_w = await vault.connect(user1).withdraw(DEPOSIT_AMOUNT / 2n, user1.address, user1.address);
+      const r_w = await tx_w.wait();
+      const sum = [r_a, r_d, r_h, r_w].reduce((acc, r) => acc + Number(r.gasUsed), 0);
+      console.log(`\n   Total gas: ${sum} gas (~$${(sum * 20 * 1e-9 * 3000).toFixed(2)} USD @ 20 gwei / $3000 ETH)`);
     });
   });
 });

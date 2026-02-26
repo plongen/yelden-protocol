@@ -9,7 +9,7 @@ describe("YeldenVault — Mainnet Fork Tests", function () {
   const USDC_MAINNET = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
   const ONDO_VAULT = "0x7D60E8F4F2DE5D7A3a6c4f5B6c7d8e9f0a1b2c3d"; // Exemplo
   const WETH = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-  const UNISWAP_V3_FACTORY = "0x1F98431c8aD98523631ae4a59f267346ea31F984";
+  const UNISWAP_V3_FACTORY = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
   
   // Fork da mainnet no bloco recente
   before(async function () {
@@ -36,6 +36,13 @@ describe("YeldenVault — Mainnet Fork Tests", function () {
       "yUSD"
     );
     await vault.waitForDeployment();
+
+    // Connect distributor so harvest() works
+    const YeldenDistributor = await ethers.getContractFactory("YeldenDistributor");
+    const distributor = await YeldenDistributor.deploy();
+    await distributor.waitForDeployment();
+    await distributor.setVault(await vault.getAddress());
+    await vault.setDistributor(await distributor.getAddress());
 
     // Impersonar conta com USDC real (ex: Binance hot wallet)
     const WHALE = "0x28C6c06298d514Db089934071355E5743bf21d60"; // Conta com muito USDC

@@ -1,8 +1,9 @@
 ﻿const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { deployConnected } = require("./helpers");
 
 describe("YeldenVault — Concurrency Testing", function () {
-  let vault, mockUSDC;
+  let vault, distributor, mockUSDC;
   let users;
 
   const NUM_USERS = 10;
@@ -12,17 +13,9 @@ describe("YeldenVault — Concurrency Testing", function () {
     users = await ethers.getSigners();
     users = users.slice(0, NUM_USERS);
 
-    const MockERC20 = await ethers.getContractFactory("MockERC20");
-    mockUSDC = await MockERC20.deploy("Mock USDC", "USDC", 6);
-    await mockUSDC.waitForDeployment();
-
-    const YeldenVault = await ethers.getContractFactory("YeldenVault");
-    vault = await YeldenVault.deploy(
-      await mockUSDC.getAddress(),
-      "Yelden USD",
-      "yUSD"
-    );
-    await vault.waitForDeployment();
+    const deployment = await deployConnected();
+    vault = deployment.vault;
+    mockUSDC = deployment.usdc;
 
     for (const user of users) {
       await mockUSDC.mint(user.address, ethers.parseUnits("100000", 6));
