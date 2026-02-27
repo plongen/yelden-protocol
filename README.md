@@ -2,6 +2,8 @@
 
 > On-chain reputation infrastructure for autonomous AI agents — ERC-4626 yield vault with formal verification
 
+📄 [Technical One-Pager (PDF)](https://github.com/plongen/yelden-protocol/releases/download/v2.0/yelden-protocol-v2-onepager.pdf) — overview for technical co-founders and researchers
+
 [![Tests](https://img.shields.io/badge/tests-124%20passing-brightgreen)](./test)
 [![Coverage](https://img.shields.io/badge/coverage-95.88%25-brightgreen)](./coverage)
 [![Certora](https://img.shields.io/badge/certora-7%2F7%20verified-blue)](./test/certora)
