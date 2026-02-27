@@ -9,7 +9,6 @@ describe("Yelden — Mainnet Test (Rápido)", function () {
   const WHALE = "0x28C6c06298d514Db089934071355E5743bf21d60";
 
   before(async function () {
-    // Aumenta o timeout para 120 segundos
     this.timeout(120000);
     
     console.log("🔄 Iniciando fork da mainnet...");
@@ -33,14 +32,14 @@ describe("Yelden — Mainnet Test (Rápido)", function () {
   });
 
   it("Deve depositar USDC real", async function () {
-    this.timeout(60000); // 60 segundos para este teste
+    this.timeout(60000);
     
     [owner, user] = await ethers.getSigners();
     
     usdc = await ethers.getContractAt("IERC20", USDC_MAINNET);
     const whale = await ethers.getSigner(WHALE);
     
-    const amount = ethers.parseUnits("100", 6); // Só 100 USDC para teste rápido
+    const amount = ethers.parseUnits("100", 6);
     
     console.log("🔄 Transferindo USDC do whale...");
     await usdc.connect(whale).transfer(user.address, amount);

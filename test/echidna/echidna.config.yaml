@@ -1,0 +1,8 @@
+testLimit: 10000
+seqLen: 50
+shrinkLimit: 1000
+coverage: true
+testMode: property
+quiet: false
+format: text
+workers: 1

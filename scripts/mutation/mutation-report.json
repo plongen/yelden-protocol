@@ -1,0 +1,89 @@
+{
+  "timestamp": "2026-02-27T02:06:42.595Z",
+  "total": 10,
+  "killed": 10,
+  "survived": 0,
+  "score": "100.0%",
+  "mutations": [
+    {
+      "id": "M01",
+      "description": "Remove zero-deposit check — allows deposit(0) to mint 0 shares",
+      "find": "require(assets > 0, \"Zero deposit\");",
+      "replace": "// require(assets > 0, \"Zero deposit\"); // MUTATED",
+      "status": "KILLED",
+      "output": "Compiled 2 Solidity files successfully (evm target: paris).\n\n\n  Yelden — Mainnet Test (Rápido)\n🔄 Iniciando fork da mainnet...\n✅ Fork concluído!\n🔄 Impersonando whale...\n✅ Whale impersonado!\n🔄 Transferindo USDC do whale...\n✅ Transferido!\n    1) Deve depositar USDC real\n✅ Fork finalizado!\n\n\n  0 passing (4s)\n  1 failing\n\n  1) Yelden — Mainnet Test (Rápido)\n       Deve depositar USDC real:\n     HardhatError: HH701: There are multiple artifacts for contract \"YeldenVault\", please use a fully qualifi"
+    },
+    {
+      "id": "M02",
+      "description": "Remove zero-shares check — allows deposit to mint 0 shares with small amount",
+      "find": "require(shares > 0, \"Zero shares\");\n\n        asset.safeTransferFrom",
+      "replace": "// require(shares > 0, \"Zero shares\"); // MUTATED\n\n        asset.safeTransferFrom",
+      "status": "KILLED",
+      "output": "Compiled 2 Solidity files successfully (evm target: paris).\n\n\n  Yelden — Mainnet Test (Rápido)\n🔄 Iniciando fork da mainnet...\n✅ Fork concluído!\n🔄 Impersonando whale...\n✅ Whale impersonado!\n🔄 Transferindo USDC do whale...\n✅ Transferido!\n    1) Deve depositar USDC real\n✅ Fork finalizado!\n\n\n  0 passing (940ms)\n  1 failing\n\n  1) Yelden — Mainnet Test (Rápido)\n       Deve depositar USDC real:\n     HardhatError: HH701: There are multiple artifacts for contract \"YeldenVault\", please use a fully qual"
+    },
+    {
+      "id": "M03",
+      "description": "Flip BASE_YIELD_BPS to 0 — no base yield allocated, all goes to surplus",
+      "find": "uint256 public constant BASE_YIELD_BPS  = 450;",
+      "replace": "uint256 public constant BASE_YIELD_BPS  = 0; // MUTATED",
+      "status": "KILLED",
+      "output": "Compiled 2 Solidity files successfully (evm target: paris).\n\n\n  Yelden — Mainnet Test (Rápido)\n🔄 Iniciando fork da mainnet...\n✅ Fork concluído!\n🔄 Impersonando whale...\n✅ Whale impersonado!\n🔄 Transferindo USDC do whale...\n✅ Transferido!\n    1) Deve depositar USDC real\n✅ Fork finalizado!\n\n\n  0 passing (873ms)\n  1 failing\n\n  1) Yelden — Mainnet Test (Rápido)\n       Deve depositar USDC real:\n     HardhatError: HH701: There are multiple artifacts for contract \"YeldenVault\", please use a fully qual"
+    },
+    {
+      "id": "M04",
+      "description": "Remove onlyOwner from harvest — anyone can harvest",
+      "find": "function harvest(uint256 grossYield) external onlyOwner {",
+      "replace": "function harvest(uint256 grossYield) external /* onlyOwner MUTATED */ {",
+      "status": "KILLED",
+      "output": "Compiled 2 Solidity files successfully (evm target: paris).\n\n\n  Yelden — Mainnet Test (Rápido)\n🔄 Iniciando fork da mainnet...\n✅ Fork concluído!\n🔄 Impersonando whale...\n✅ Whale impersonado!\n🔄 Transferindo USDC do whale...\n✅ Transferido!\n    1) Deve depositar USDC real\n✅ Fork finalizado!\n\n\n  0 passing (945ms)\n  1 failing\n\n  1) Yelden — Mainnet Test (Rápido)\n       Deve depositar USDC real:\n     HardhatError: HH701: There are multiple artifacts for contract \"YeldenVault\", please use a fully qual"
+    },
+    {
+      "id": "M05",
+      "description": "Subtract instead of add to yieldReserve — reserve drains on harvest",
+      "find": "yieldReserve += toReserve;",
+      "replace": "yieldReserve -= toReserve; // MUTATED",
+      "status": "KILLED",
+      "output": "Compiled 2 Solidity files successfully (evm target: paris).\n\n\n  Yelden — Mainnet Test (Rápido)\n🔄 Iniciando fork da mainnet...\n✅ Fork concluído!\n🔄 Impersonando whale...\n✅ Whale impersonado!\n🔄 Transferindo USDC do whale...\n✅ Transferido!\n    1) Deve depositar USDC real\n✅ Fork finalizado!\n\n\n  0 passing (968ms)\n  1 failing\n\n  1) Yelden — Mainnet Test (Rápido)\n       Deve depositar USDC real:\n     HardhatError: HH701: There are multiple artifacts for contract \"YeldenVault\", please use a fully qual"
+    },
+    {
+      "id": "M06",
+      "description": "Remove reentrancy guard from deposit — enables reentrancy attack",
+      "find": "function deposit(uint256 assets, address receiver)\n        external\n        nonReentrant",
+      "replace": "function deposit(uint256 assets, address receiver)\n        external\n        /* nonReentrant MUTATED */",
+      "status": "KILLED",
+      "output": "Compiled 2 Solidity files successfully (evm target: paris).\n\n\n  Yelden — Mainnet Test (Rápido)\n🔄 Iniciando fork da mainnet...\n✅ Fork concluído!\n🔄 Impersonando whale...\n✅ Whale impersonado!\n🔄 Transferindo USDC do whale...\n✅ Transferido!\n    1) Deve depositar USDC real\n✅ Fork finalizado!\n\n\n  0 passing (984ms)\n  1 failing\n\n  1) Yelden — Mainnet Test (Rápido)\n       Deve depositar USDC real:\n     HardhatError: HH701: There are multiple artifacts for contract \"YeldenVault\", please use a fully qual"
+    },
+    {
+      "id": "M07",
+      "description": "Remove distributor check in harvest — harvest succeeds without distributor",
+      "find": "require(address(distributor) != address(0), \"Distributor not set\");",
+      "replace": "// require(address(distributor) != address(0), \"Distributor not set\"); // MUTATED",
+      "status": "KILLED",
+      "output": "Compiled 2 Solidity files successfully (evm target: paris).\n\n\n  Yelden — Mainnet Test (Rápido)\n🔄 Iniciando fork da mainnet...\n✅ Fork concluído!\n🔄 Impersonando whale...\n✅ Whale impersonado!\n🔄 Transferindo USDC do whale...\n✅ Transferido!\n    1) Deve depositar USDC real\n✅ Fork finalizado!\n\n\n  0 passing (908ms)\n  1 failing\n\n  1) Yelden — Mainnet Test (Rápido)\n       Deve depositar USDC real:\n     HardhatError: HH701: There are multiple artifacts for contract \"YeldenVault\", please use a fully qual"
+    },
+    {
+      "id": "M08",
+      "description": "Swap receiver and owner in Withdraw event — incorrect event args",
+      "find": "emit Withdraw(msg.sender, receiver, owner, assets, shares);",
+      "replace": "emit Withdraw(msg.sender, owner, receiver, assets, shares); // MUTATED",
+      "status": "KILLED",
+      "output": "Compiled 2 Solidity files successfully (evm target: paris).\n\n\n  Yelden — Mainnet Test (Rápido)\n🔄 Iniciando fork da mainnet...\n✅ Fork concluído!\n🔄 Impersonando whale...\n✅ Whale impersonado!\n🔄 Transferindo USDC do whale...\n✅ Transferido!\n    1) Deve depositar USDC real\n✅ Fork finalizado!\n\n\n  0 passing (937ms)\n  1 failing\n\n  1) Yelden — Mainnet Test (Rápido)\n       Deve depositar USDC real:\n     HardhatError: HH701: There are multiple artifacts for contract \"YeldenVault\", please use a fully qual"
+    },
+    {
+      "id": "M09",
+      "description": "Remove allowance check in withdraw — delegated withdrawal without approval",
+      "find": "if (msg.sender != owner) {\n            _spendAllowance(owner, msg.sender, shares);\n        }\n\n        _burn(owner, shares);\n        asset.safeTransfer(receiver, assets);\n\n        emit Withdraw",
+      "replace": "// if (msg.sender != owner) { ... } // MUTATED\n\n        _burn(owner, shares);\n        asset.safeTransfer(receiver, assets);\n\n        emit Withdraw",
+      "status": "KILLED",
+      "output": "Compiled 2 Solidity files successfully (evm target: paris).\n\n\n  Yelden — Mainnet Test (Rápido)\n🔄 Iniciando fork da mainnet...\n✅ Fork concluído!\n🔄 Impersonando whale...\n✅ Whale impersonado!\n🔄 Transferindo USDC do whale...\n✅ Transferido!\n    1) Deve depositar USDC real\n✅ Fork finalizado!\n\n\n  0 passing (916ms)\n  1 failing\n\n  1) Yelden — Mainnet Test (Rápido)\n       Deve depositar USDC real:\n     HardhatError: HH701: There are multiple artifacts for contract \"YeldenVault\", please use a fully qual"
+    },
+    {
+      "id": "M10",
+      "description": "Flip surplus calculation — surplus becomes negative-equivalent",
+      "find": "uint256 surplus = grossYield - base - regen;",
+      "replace": "uint256 surplus = grossYield + base + regen; // MUTATED",
+      "status": "KILLED",
+      "output": "Compiled 2 Solidity files successfully (evm target: paris).\n\n\n  Yelden — Mainnet Test (Rápido)\n🔄 Iniciando fork da mainnet...\n✅ Fork concluído!\n🔄 Impersonando whale...\n✅ Whale impersonado!\n🔄 Transferindo USDC do whale...\n✅ Transferido!\n    1) Deve depositar USDC real\n✅ Fork finalizado!\n\n\n  0 passing (891ms)\n  1 failing\n\n  1) Yelden — Mainnet Test (Rápido)\n       Deve depositar USDC real:\n     HardhatError: HH701: There are multiple artifacts for contract \"YeldenVault\", please use a fully qual"
+    }
+  ]
+}
