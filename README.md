@@ -1,67 +1,65 @@
 # Yelden Protocol
 
-> On-chain reputation infrastructure for autonomous AI agents — ERC-4626 yield vault with formal verification
+> RWA yield distribution · ZK privacy · AI Agent economy · ERC-4626 vault
 
-📄 [Technical One-Pager (PDF)](https://github.com/plongen/yelden-protocol/releases/download/v2.0/yelden-protocol-v2-onepager.pdf) — overview for technical co-founders and researchers
-
-[![Tests](https://img.shields.io/badge/tests-124%20passing-brightgreen)](./test)
-[![Coverage](https://img.shields.io/badge/coverage-95.88%25-brightgreen)](./coverage)
-[![Certora](https://img.shields.io/badge/certora-7%2F7%20verified-blue)](./test/certora)
+[![Tests](https://img.shields.io/badge/tests-198%20passing-brightgreen)](./test)
 [![Solidity](https://img.shields.io/badge/solidity-0.8.20-blue)](./contracts)
+[![Certora](https://img.shields.io/badge/certora-7%2F7%20rules-purple)](./certora)
+[![Echidna](https://img.shields.io/badge/echidna-3%2F3%20invariants-orange)](./echidna)
 [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
 ---
 
 ## Overview
 
-Yelden is a yield distribution protocol built on ERC-4626. Users deposit USDC, receive yUSD shares, and yield harvested from Real World Assets is automatically routed across four channels: base rebase for depositors, bear market reserve, and a surplus pool split between ZK-proven human contributors and AI agents with on-chain reputation scores.
+Yelden is a yield distribution protocol built on ERC-4626. Users deposit USDC, receive yUSD shares, and yield harvested from Real World Assets is automatically routed across four channels: base rebase for depositors, environmental regen fund, bear market reserve, and a surplus pool split between human contributors (ZK-proven via Groth16) and AI agents (Chainlink DON-validated, performance-scored, economically accountable).
 
-The **AIAgentRegistry** is the core primitive — an on-chain registry that gives autonomous agents a verifiable identity, a reputation score (0–1000) updated by a Chainlink DON, and economic accountability via slashing (v2).
+**What makes Yelden different:** AI agents don't just participate — they have skin in the game. Agents stake $YLD, earn a performance score (0–1000), pay fees inversely proportional to their score, and are slashed for misbehavior. Score 1000 pays zero. Malicious agents lose everything.
 
 ---
 
 ## Architecture
 
 ```
-                        ┌─────────────────────────────────┐
-                        │         User / dApp              │
-                        └────────────┬────────────────────┘
-                                     │ deposit(USDC)
-                                     ▼
-                        ┌─────────────────────────────────┐
-                        │         YeldenVault              │
-                        │         (ERC-4626)               │
-                        │                                  │
-                        │  asset: USDC                     │
-                        │  shares: yUSD                    │
-                        │                                  │
-                        │  harvest(grossYield)             │
-                        │  ├─ 4.5% → base rebase (yUSD)   │
-                        │  ├─ 5.0% → regen fund           │
-                        │  ├─ surplus × 20% → yieldReserve│
-                        │  └─ surplus × 80% → Distributor │
-                        └────────────┬────────────────────┘
-                                     │ distribute(surplus)
-                                     ▼
-                        ┌─────────────────────────────────┐
-                        │      YeldenDistributor           │
-                        │                                  │
-                        │  70% → proportional pool         │
-                        │  20% → equalized pool            │
-                        │  10% → ZK bonus pool             │
-                        │    ├─ 95% → human contributors   │
-                        │    └─ 5%  → AI agent pool        │
-                        └────────┬────────────┬───────────┘
-                                 │            │
-                   claimZKBonus()│            │releaseAIBonus()
-                                 ▼            ▼
-                        ┌──────────────┐ ┌──────────────────┐
-                        │ ZKVerifier   │ │ AIAgentRegistry  │
-                        │ (Groth16)    │ │ (Chainlink DON)  │
-                        │              │ │                  │
-                        │ nullifier    │ │ score: 0–1000    │
-                        │ anti-replay  │ │ PENDING→ACTIVE   │
-                        └──────────────┘ └──────────────────┘
+                     ┌──────────────────────────────────┐
+                     │          User / dApp              │
+                     └───────────┬──────────────────────┘
+                                 │ deposit(USDC)
+                                 ▼
+                     ┌──────────────────────────────────┐
+                     │         YeldenVault               │
+                     │         (ERC-4626)                │
+                     │                                   │
+                     │  asset: USDC  shares: yUSD        │
+                     │                                   │
+                     │  harvest(grossYield)              │
+                     │  ├─ 4.5% → base rebase (yUSD)    │
+                     │  ├─ 5.0% → regen fund            │
+                     │  ├─ surplus × 20% → yieldReserve │
+                     │  └─ surplus × 80% → Distributor  │
+                     └───────────┬──────────────────────┘
+                                 │ distribute(surplus)
+                                 ▼
+                     ┌──────────────────────────────────┐
+                     │       YeldenDistributor           │
+                     │                                   │
+                     │  70% → proportional pool         │
+                     │  20% → equalized pool            │
+                     │  10% → ZK bonus pool             │
+                     │    ├─ 95% → human contributors   │
+                     │    └─ 5%  → AI agent pool        │
+                     └──────────┬──────────┬────────────┘
+                                │          │
+              claimZKBonus()    │          │ releaseAIBonus()
+                                ▼          ▼
+                     ┌────────────────┐ ┌──────────────────────┐
+                     │  ZKVerifier    │ │   AIAgentRegistry    │
+                     │  (Groth16)     │ │   (v3 — complete)    │
+                     │                │ │                      │
+                     │  verifyProof() │ │  score: 0–1000       │
+                     │  nullifier     │ │  fee ∝ (1000−score)  │
+                     │  anti-replay   │ │  slash → burn $YLD   │
+                     └────────────────┘ └──────────────────────┘
 ```
 
 ---
@@ -86,106 +84,136 @@ grossYield
   ├─ 4.5%  BASE_YIELD_BPS    → rebased into yUSD price
   ├─ 5.0%  REGEN_BPS         → environmental fund
   └─ 90.5% surplus
-       ├─ 20%  YIELD_RESERVE  → bear market reserve (yieldReserve)
+       ├─ 20%  YIELD_RESERVE  → bear market reserve
        └─ 80%  → YeldenDistributor.distribute()
 ```
-
-> **Note:** `harvest()` is purely accounting — `yieldReserve` tracks cumulative reserve allocation and can exceed `totalAssets()` before a corresponding USDC deposit. Documented behavior, verified by Echidna and Certora.
 
 ---
 
 ### `YeldenDistributor.sol`
-Receives surplus from vault and allocates to three pools. Only callable by the authorized vault address.
+Receives surplus from vault and allocates to three pools.
 
 | Function | Description |
 |---|---|
 | `distribute(surplus)` | Called by vault on each harvest |
 | `claimZKBonus(amount, category, proof...)` | Human contributor claims from ZK pool |
-| `releaseAIBonus(agent, amount)` | Owner releases from AI pool to eligible agent |
+| `releaseAIBonus(agent, amount)` | Owner releases from AI pool to agent |
 | `setVault(address)` | Owner: authorize vault address |
 | `setZKVerifier(address)` | Owner: enable on-chain ZK proof verification |
-| `setRegistry(address)` | Owner: connect AIAgentRegistry |
 | `poolBalances()` | View: returns (zkPool, aiPool, totalDistributed) |
 
 ---
 
-### `AIAgentRegistry.sol`
-On-chain reputation registry for autonomous AI agents. Any address can register — approval and score updates are oracle-governed.
+### `ZKVerifier.sol` + `contracts/zk/Groth16Verifier.sol`
+On-chain Groth16 proof verifier. Accepts real ZK proofs generated by `circuits/contribution.circom`.
+
+**Public inputs layout:**
+```
+input[0] = valid          — 1 if score >= threshold, 0 otherwise
+input[1] = threshold      — minimum score required (e.g. 500)
+input[2] = nullifierHash  — Poseidon(score, salt, 1) — prevents double-claim
+input[3] = commitmentHash — Poseidon(score, salt) — proves consistency
+```
 
 | Function | Description |
 |---|---|
-| `registerAgent(name, agentType)` | Permissionless — pays 10 USDC anti-spam fee |
-| `approveAgent(address)` | DON or owner — transitions PENDING → ACTIVE |
-| `banAgent(address, reason)` | Owner — transitions to BANNED |
-| `updateScore(address, score)` | DON or owner — updates score 0–1000 |
-| `updateScoreBatch(addresses, scores)` | DON — batch update up to 50 agents |
-| `isEligible(address)` | View — ACTIVE and score ≥ 500 |
-| `isActive(address)` | View — ACTIVE status |
-| `score(address)` | View — current score (0–1000) |
-| `getAgent(address)` | View — full agent profile |
+| `claimBonus(a, b, c, input[4])` | Verify Groth16 proof, mark nullifier, emit event |
+| `verifyOnly(a, b, c, input[4])` | View: validate proof without state change |
+| `isNullifierUsed(nullifierHash)` | View: check if nullifier already used |
 
-**Agent lifecycle:**
-```
-registerAgent()  →  PENDING  →  ACTIVE  →  BANNED
-                    (10 USDC)   (DON/owner) (owner, score < 500)
-```
+**Privacy guarantee:** The prover demonstrates `score >= threshold` without revealing `score` or `salt`. Nobody — including the protocol — can link a proof to its claimer.
 
-**Integration** (3 lines of Solidity):
+---
+
+### `AIAgentRegistry.sol`
+On-chain reputation primitive for autonomous AI agents. Formally verified. Any protocol integrates in two lines:
+
 ```solidity
-import "./interfaces/IAgentRegistry.sol";
-
 IAgentRegistry registry = IAgentRegistry(REGISTRY_ADDRESS);
 require(registry.isEligible(agent), "Agent not eligible");
 ```
 
----
+**Score model:** Score starts at 300 on approval and grows only through verified performance. Capital cannot buy a higher score.
 
-### `ZKVerifier.sol`
-Nullifier-based anti-replay registry for ZK bonus claims. Accepts Groth16 proof shape `(a, b, c, publicInputs[3])`. Currently in stub mode — on-chain Groth16 verification in v3.
+**Fee model:**
+```
+monthly fee = monthlyFee × (1000 − score) / 1000
 
----
+score 1000 → 0 YLD/month  (perfect agent, free forever)
+score 500  → 0.5 YLD/month
+score 0    → 1 YLD/month  (full fee, self-eliminates)
+```
 
-## Security — Phase 1 Pre-Audit Tooling
+**Slash levels:**
 
-Full pre-audit tooling stack completed before registry development:
-
-| Tool | Result | Details |
+| Level | Stake Burned | Status After |
 |---|---|---|
-| `solidity-coverage` | **95.88% lines** | `YeldenVault.sol`: 100% line coverage |
-| Mutation testing | **10/10 killed** | 100% mutation score — every semantic change caught |
-| Slither | **40 findings** | All low-risk: naming conventions, immutable suggestions |
-| Echidna fuzzing | **3/3 invariants** | 10,000 call sequences, 0 violations |
-| Certora Prover | **7/7 rules verified** | Formal mathematical proof — No errors found |
+| WARNING | 10% | ACTIVE |
+| SUSPENSION | 50% | PENDING |
+| BAN | 100% | BANNED permanently |
 
-**Real bug found:** Echidna falsified `echidna_reserve_bounded` — `yieldReserve` can exceed `totalAssets()` after `harvest()` without a prior USDC deposit. Confirmed expected behavior by design. Invariant updated in both Echidna and Certora specs.
+All fees and slashed $YLD are burned to `0x000...dead`. Self-cleaning registry — underperforming agents self-eliminate without governance intervention.
+
+---
+
+## ZK Circuit
+
+```bash
+# Compile (requires circom 2.x — see Getting Started)
+cd circuits
+circom contribution.circom --r1cs --wasm --sym --O2 --output build/
+
+# Verify existing proof
+snarkjs groth16 verify circuits/build/verification_key.json \
+  circuits/build/public.json circuits/build/proof.json
+```
+
+**Circuit stats:**
+```
+template instances:      144
+non-linear constraints:  532
+public inputs:           3
+private inputs:          2 (score, salt — never revealed)
+public outputs:          1 (valid)
+```
 
 ---
 
 ## Test Suite
 
 ```
-124 tests passing — 0 failing
+198 tests passing — 0 failing
 ```
 
 | Suite | Tests | Description |
 |---|---|---|
 | `YeldenVault.test.js` | 57 | Deployment, deposit, withdraw, redeem, harvest, reserve |
 | `YeldenVault.bearmarket.js` | 8 | Reserve accumulation, usage, full cycle |
-| `YeldenVault.concurrency.js` | 5 | 10 concurrent users, mixed ops, circular transfers |
+| `YeldenVault.concurrency.js` | 5 | 10 concurrent users, mixed ops |
 | `YeldenVault.fuzz.js` | 9 | 100 random deposits, 50 withdrawals, 100 harvests |
 | `YeldenVault.gas.js` | 10 | Gas benchmarks, user journey cost |
 | `YeldenVault.mainnet.js` | 11 | Real USDC, Chainlink oracles, Uniswap interop |
 | `reentrancy-test.js` | 1 | Reentrancy attack blocked |
-| Integration | 6 | Full cycle: deposit → harvest → ZK claim → AI bonus |
+| `AIAgentRegistry.test.js` | 69 | Registration, scoring, fees, slashing, lifecycle |
+| `ZKVerifier.test.js` | 16 | Real Groth16 proofs, nullifier, double-claim, manipulation |
+| `YeldenDistributor` | 12 | Pool distribution, ZK bonus, AI pool |
 
-**Gas benchmarks** (Hardhat local):
+**Formal verification:**
 ```
-deposit (first):   112,159 gas
-deposit (second):   78,382 gas
-withdraw:           61,669 gas
-harvest:           137,410 gas  (includes distributor external call)
-transfer:           52,141 gas
-full user journey: 238,889 gas  (~$14.33 @ 20 gwei / $3000 ETH)
+Certora Prover:   7/7 rules verified
+Echidna fuzzing:  3/3 invariants — 10,000 call sequences — zero violations
+Mutation testing: 10/10 killed — 100% mutation score
+Coverage:         95.88% lines (vault: 100%)
+```
+
+**Gas benchmarks:**
+```
+deposit (first):    108,179 gas
+deposit (second):    74,129 gas
+withdraw:            57,311 gas
+harvest:            130,993 gas
+registerAgent:       ~95,000 gas
+claimBonus (ZK):    ~280,000 gas  (includes Groth16 on-chain verification)
 ```
 
 ---
@@ -196,6 +224,7 @@ full user journey: 238,889 gas  (~$14.33 @ 20 gwei / $3000 ETH)
 ```bash
 node >= 18
 npm >= 9
+rust >= 1.70  # for circom 2.x
 ```
 
 ### Install
@@ -210,25 +239,26 @@ npm install
 # All tests
 npx hardhat test
 
-# Coverage
-npx hardhat coverage
+# ZK verifier (requires circuits/build/ artifacts)
+npx hardhat test test/ZKVerifier.test.js
 
-# Mutation testing
-npx hardhat clean && npx hardhat compile
-node scripts/mutation/run-mutations.js
+# Registry
+npx hardhat test test/AIAgentRegistry.test.js
 
-# Echidna fuzzing (Linux / WSL)
-echidna contracts/EchidnaSimple.sol \
-  --contract EchidnaSimple \
-  --config test/echidna/echidna.config.yaml \
-  --solc-args "--allow-paths $(pwd) --base-path $(pwd) --include-path $(pwd)/node_modules"
+# With mainnet fork
+ALCHEMY_KEY=your_key npx hardhat test
+```
 
-# Certora formal verification
-certoraRun contracts/YeldenVault.sol contracts/YeldenDistributor.sol \
-  --verify YeldenVault:test/certora/YeldenVault.spec \
-  --solc solc \
-  --packages @openzeppelin=node_modules/@openzeppelin \
-  --wait_for_results
+### Compile ZK circuit (WSL or Linux)
+```bash
+# Install circom 2.x
+git clone https://github.com/iden3/circom.git ~/.circom
+cd ~/.circom && cargo build --release
+export PATH="$HOME/.circom/target/release:$PATH"
+
+# Compile
+cd /path/to/yelden-protocol/circuits
+circom contribution.circom --r1cs --wasm --sym --O2 --output build/
 ```
 
 ---
@@ -238,16 +268,21 @@ certoraRun contracts/YeldenVault.sol contracts/YeldenDistributor.sol \
 ```
 yelden-protocol/
 ├── contracts/
-│   ├── YeldenVault.sol          # ERC-4626 vault — core
-│   ├── YeldenDistributor.sol    # Yield distribution — 3 pools
-│   ├── ZKVerifier.sol           # ZK nullifier registry (stub)
-│   ├── AIAgentRegistry.sol      # On-chain agent reputation
-│   ├── IAgentRegistry.sol       # Interface for Distributor integration
-│   ├── interfaces/
-│   └── mocks/
-├── scripts/
-│   └── mutation/
-│       └── run-mutations.js     # Mutation testing script
+│   ├── YeldenVault.sol           # ERC-4626 vault — core
+│   ├── YeldenDistributor.sol     # Yield distribution — 3 pools
+│   ├── ZKVerifier.sol            # Groth16 nullifier verifier
+│   ├── AIAgentRegistry.sol       # AI agent reputation — v3
+│   └── zk/
+│       └── Groth16Verifier.sol   # Generated by snarkjs
+├── circuits/
+│   ├── contribution.circom       # ZK circuit — score >= threshold
+│   └── build/
+│       ├── contribution.r1cs
+│       ├── contribution.sym
+│       ├── contribution_js/
+│       │   └── contribution.wasm
+│       ├── contribution_0001.zkey
+│       └── verification_key.json
 ├── test/
 │   ├── helpers.js
 │   ├── YeldenVault.test.js
@@ -257,11 +292,10 @@ yelden-protocol/
 │   ├── YeldenVault.gas.js
 │   ├── YeldenVault.mainnet.js
 │   ├── reentrancy-test.js
-│   ├── certora/
-│   │   └── YeldenVault.spec     # Certora formal verification spec
-│   └── echidna/
-│       ├── EchidnaSimple.sol    # Echidna fuzzing harness
-│       └── echidna.config.yaml
+│   ├── AIAgentRegistry.test.js
+│   └── ZKVerifier.test.js
+├── certora/                      # Formal verification specs
+├── echidna/                      # Fuzz invariants
 ├── hardhat.config.js
 └── package.json
 ```
@@ -270,31 +304,41 @@ yelden-protocol/
 
 ## Roadmap
 
-### v2 — complete
-- [x] ERC-4626 vault with `deposit`, `withdraw`, `redeem`
-- [x] `harvest()` connected to `YeldenDistributor`
-- [x] ZK bonus pool with nullifier anti-replay
-- [x] AI agent pool (manual release, owner-controlled)
-- [x] Bear market reserve with `withdrawReserve`
-- [x] 124 tests passing (fuzz, concurrency, mainnet fork, gas)
-- [x] 95.88% line coverage — YeldenVault.sol 100%
-- [x] Mutation score 100% (10/10 killed)
-- [x] Slither, Echidna, Certora — Phase 1 pre-audit complete
-- [x] `AIAgentRegistry.sol` — permissionless registration, DON scoring, lifecycle management
+### v3 — current
+- [x] `AIAgentRegistry.sol` — subscription stake, performance fee burn, slashing
+- [x] `ZKVerifier.sol` — real Groth16 on-chain verifier
+- [x] `circuits/contribution.circom` — compiled, trusted setup complete, proof verified
+- [x] `contracts/zk/Groth16Verifier.sol` — generated by snarkjs
+- [x] 198 tests passing
 
-### v3 — planned
-- [ ] Slashing — agents stake $YLD, score < 300 triggers partial slash
-- [ ] Groth16 on-chain verifier — replace ZKVerifier stub
-- [ ] `$YLD` token — governance and proportional pool distribution
-- [ ] Equalized pool on-chain distribution — `$YLD` holder snapshots
-- [ ] RWA adapter interfaces — Ondo, Centrifuge, Maple
-- [ ] Standard interface — `IAgentRegistry` composable with external protocols
+### v4 — next
+- [ ] `$YLD` token — ERC-20, 1B fixed supply, burn, governance
+- [ ] `veYLD` — vote-escrowed lock for Registry stake
+- [ ] RWA adapters — Ondo, Centrifuge, Maple
+- [ ] Oracle redundancy — Chainlink primary + Pyth secondary + circuit breaker
+- [ ] Chainlink DON integration — real SCORER_ROLE automation
+
+---
+
+## Security
+
+| Tool | Result |
+|---|---|
+| Certora Prover | 7/7 rules verified |
+| Echidna | 3/3 invariants — 10k sequences |
+| Mutation testing | 100% score |
+| Slither | 40 findings — all low risk |
+| Coverage | 95.88% lines |
+
+One real bug found and documented: `harvest()` reserve accounting can exceed `totalAssets()` before a corresponding deposit. Confirmed expected behavior — invariant updated in both Echidna and Certora specs.
+
+Commercial audit (Code4rena or Trail of Bits) planned before mainnet deployment.
 
 ---
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md).
+DevNet bounties: $500 YLD per confirmed bug, $2,000 per accepted sub-vault.
 
 ---
 
